@@ -457,6 +457,20 @@ class XFlowGraph {
       }
     };
 
+    this.svg.append("svg:defs").selectAll("marker")
+      .data(["end"])      // Different link/path types can be defined here
+      .enter().append("svg:marker")    // This section adds in the arrows
+      .attr("id", String)
+      .attr("class", "arrow")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5");
+
     this.initZoom();
   }
 
@@ -471,12 +485,12 @@ class XFlowGraph {
       };
     });
 
-    this.simulation = d3.forceSimulation().nodes(this.nodes);	
+    this.simulation = d3.forceSimulation().nodes(this.nodes);
 
     var link_force = d3.forceLink(this.links).id(d=>d.id);
 
-    var collide_force = d3.forceCollide(this.radius).strength(this.gravity);   
-     
+    var collide_force = d3.forceCollide(this.radius).strength(this.gravity);
+
     this.simulation
       .force("center_force", d3.forceCenter(this.width / 2, this.height / 2))
       .force("charge_force", d3.forceManyBody().strength(-this.gravity))
@@ -501,21 +515,29 @@ class XFlowGraph {
       .selectAll("line")
       .data(this.links)
       .enter()
-      .append("line")
-      .attr("stroke-width", 2);        
+      .append("svg:path")
+      .attr("class", "link")
+      .attr("marker-end", "url(#end)");
 
     this.nodeG = this.g.append("g")
-      .attr("class", "nodes")
-      .selectAll("circle")
+      .selectAll(".node")
       .data(this.nodes)
-      .enter()
+      .enter().append("g")
+      .attr("class", "node");
+
+    this.nodeG
       .append("circle")
       .attr("r", 5)
       .attr("fill", nodeColorFill);
 
-		const drag_handler = d3.drag()
-			.on("start", (d)=> {
-					if (!d3.event.active) {
+    this.nodeG.append("text")
+      .attr("x", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.id; });
+
+    const drag_handler = d3.drag()
+      .on("start", (d)=> {
+          if (!d3.event.active) {
             this.simulation.alphaTarget(0.3).restart();
           }
         d.fx = d.x;
@@ -536,6 +558,7 @@ class XFlowGraph {
     drag_handler(this.nodeG);
 
 
+/*
     const tickActions = ()=> {
       this.nodeG
         .attr("cx", (d) => d.x)
@@ -547,6 +570,25 @@ class XFlowGraph {
         .attr("x2", (d) => d.target.x)
         .attr("y2", (d) => d.target.y);
     }
+*/
+
+    const tickActions = ()=> {
+      this.linkG.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+          dy = d.target.y - d.source.y,
+          dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" +
+          d.source.x + "," +
+          d.source.y + "A" +
+          dr + "," + dr + " 0 0,1 " +
+          d.target.x + "," +
+          d.target.y;
+      });
+
+      this.nodeG
+        .attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")"; });
+    }
 
     this.simulation.on("tick", tickActions );
 
@@ -557,7 +599,7 @@ class XFlowGraph {
       .on("zoom", ()=> {
         this.g.attr("transform", d3.event.transform)
     });
-    zoom_handler(this.svg);     
+    zoom_handler(this.svg);
 
   }
 }
