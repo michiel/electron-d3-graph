@@ -527,13 +527,26 @@ class XFlowGraph {
 
     this.nodeG
       .append("circle")
-      .attr("r", 5)
+      .attr("r", this.radius)
       .attr("fill", nodeColorFill);
 
     this.nodeG.append("text")
       .attr("x", 12)
       .attr("dy", ".35em")
-      .text(function(d) { return d.id; });
+      .text((d)=> { return d.id; });
+
+    const radius = this.radius;
+    this.nodeG
+      .on("mouseover", function() {
+        d3.select(this).select("circle").transition()
+          .duration(750)
+          .attr("r", radius * 1.5);
+      })
+      .on("mouseout", function() {
+        d3.select(this).select("circle").transition()
+          .duration(750)
+          .attr("r", radius);
+      });
 
     const drag_handler = d3.drag()
       .on("start", (d)=> {
@@ -556,21 +569,6 @@ class XFlowGraph {
       });
 
     drag_handler(this.nodeG);
-
-
-/*
-    const tickActions = ()=> {
-      this.nodeG
-        .attr("cx", (d) => d.x)
-        .attr("cy", (d) => d.y);
-
-      this.linkG
-        .attr("x1", (d) => d.source.x)
-        .attr("y1", (d) => d.source.y)
-        .attr("x2", (d) => d.target.x)
-        .attr("y2", (d) => d.target.y);
-    }
-*/
 
     const tickActions = ()=> {
       this.linkG.attr("d", function(d) {
