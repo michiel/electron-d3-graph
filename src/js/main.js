@@ -321,6 +321,19 @@ class XFlowGraph {
 
     this.radius = 7;
     this.gravity = 65;
+
+    this.nodeTypeColorProfile = {
+      "flow" : {
+        "start" : "blue",
+        "end"   : "red",
+        "branch" : "green"
+      },
+      "flox" : {
+        "evalexpr": "pink"
+      }
+    };
+
+    this.initZoom();
   }
 
   setXFlow(xflow) {
@@ -346,24 +359,27 @@ class XFlowGraph {
       .force("links", link_force)
       .force("collide", collide_force);
 
-
     const nodeColorFill = (d) => {
-      if (d.nodetype === "flow") {
-        if (d.action == "start") {
-          return "blue";
-        } else if (d.action == "branch") {
-          return "green";
-        } else {
-          return "red";
+      const pr = this.nodeTypeColorProfile;
+      const o1 = pr[d.nodetype];
+
+      if (o1) {
+        const o2 = o1[d.action];
+        if (o2) {
+          return o2;
         }
-      } else if (d.nodetype === "flox") {
-        return "pink";
-      } else {
-        return "lightgreen";
       }
+      return "black";
     }
 
-    //draw circles for the nodes 
+    this.linkG = this.g.append("g")
+      .attr("class", "links")
+      .selectAll("line")
+      .data(this.links)
+      .enter()
+      .append("line")
+      .attr("stroke-width", 2);        
+
     this.nodeG = this.g.append("g")
       .attr("class", "nodes")
       .selectAll("circle")
@@ -373,40 +389,30 @@ class XFlowGraph {
       .attr("r", 5)
       .attr("fill", nodeColorFill);
 
-    this.linkG = this.g.append("g")
-      .attr("class", "links")
-      .selectAll("line")
-      .data(this.links)
-      .enter().append("line")
-      .attr("stroke-width", 2);        
+    const tickActions = ()=> {
+      this.nodeG
+        .attr("cx", (d) => d.x)
+        .attr("cy", (d) => d.y);
+
+      this.linkG
+        .attr("x1", (d) => d.source.x)
+        .attr("y1", (d) => d.source.y)
+        .attr("x2", (d) => d.target.x)
+        .attr("y2", (d) => d.target.y);
+    }
 
     this.simulation.on("tick", tickActions );
 
-    let self = this;
-
-    function tickActions() {
-      self.nodeG
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
-
-      self.linkG
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
-
-    }
-
-    var zoom_handler = d3.zoom()
-      .on("zoom", zoom_actions);
-
-    zoom_handler(this.svg);     
-
-    function zoom_actions(){
-      self.g.attr("transform", d3.event.transform)
-    }
   }
 
+  initZoom() {
+    const zoom_handler = d3.zoom()
+      .on("zoom", ()=> {
+        this.g.attr("transform", d3.event.transform)
+    });
+    zoom_handler(this.svg);     
+
+  }
 }
 
 const xflowGraph = new XFlowGraph("#g1");
