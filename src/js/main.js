@@ -307,6 +307,130 @@ const xflow_2 = {
   ]
 };
 
+
+const xflow_3 = {
+  "requirements": [
+    {
+      "xtype": "flow",
+      "version": 1
+    },
+    {
+      "xtype": "flox",
+      "version": 1
+    }
+  ],
+  "variables" : {
+    "input" : [
+      {
+        "name"  : "CalcValueA",
+        "vtype"  : "number",
+        "value" : "1"
+      },
+      {
+        "name"  : "CalcValueB",
+        "vtype"  : "number",
+        "value" : "2"
+      }
+    ],
+    "output" : [
+      {
+        "vtype" : "number",
+        "name" : "ReturnValue"
+      }
+    ],
+    "local" : [
+      {
+        "name"  : "ReturnValue",
+        "vtype"  : "number",
+        "value" : "0"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "nodetype": "flow",
+      "action": "start",
+      "label" : "Start",
+      "parameters": {
+        "flow" : {
+        }
+      }
+    },
+    {
+      "id": 2,
+      "nodetype": "flox",
+      "action": "evalexpr",
+      "label" : "Flox",
+      "parameters": {
+        "flox" : {
+          "expression" : "$CalcValueA<$CalcValueB",
+          "returns"    : {
+            "name"   : "ReturnValue",
+            "vtype"   : "boolean"
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "nodetype": "flow",
+      "action": "branch",
+      "label" : "Branch",
+      "parameters": {
+        "flow" : {
+          "name": "ReturnValue",
+          "vtype": "boolean"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "nodetype": "flow",
+      "action": "end",
+      "label" : "End",
+      "parameters": {
+        "flow" : {
+        }
+      }
+    },
+    {
+      "id": 5,
+      "nodetype": "flow",
+      "action": "end",
+      "label" : "End",
+      "parameters": {
+        "flow" : {
+        }
+      }
+    }
+  ],
+  "edges": [
+    [ 1, 2 ],
+    [ 2, 3 ],
+    [ 3, 4 ],
+    [ 3, 5 ]
+  ],
+  "branches" : [
+    {
+      "edge"   : [3,4],
+      "xvar" : {
+        "name"  : "ReturnValue",
+        "vtype"  : "boolean",
+        "value" : "true"
+      }
+    },
+    {
+      "edge"   : [3,5],
+      "xvar" : {
+        "name"  : "ReturnValue",
+        "vtype"  : "boolean",
+        "value" : "false"
+      }
+    }
+  ]
+};
+
 class XFlowGraph {
 
   constructor(svgSelector) {
@@ -389,6 +513,29 @@ class XFlowGraph {
       .attr("r", 5)
       .attr("fill", nodeColorFill);
 
+		const drag_handler = d3.drag()
+			.on("start", (d)=> {
+					if (!d3.event.active) {
+            this.simulation.alphaTarget(0.3).restart();
+          }
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (d)=> {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      })
+      .on("end", (d)=> {
+        if (!d3.event.active) {
+          this.simulation.alphaTarget(0);
+        }
+        d.fx = null;
+        d.fy = null;
+      });
+
+    drag_handler(this.nodeG);
+
+
     const tickActions = ()=> {
       this.nodeG
         .attr("cx", (d) => d.x)
@@ -420,4 +567,7 @@ xflowGraph.setXFlow(xflow);
 
 const xflowGraph2 = new XFlowGraph("#g2");
 xflowGraph2.setXFlow(xflow_2);
+
+const xflowGraph3 = new XFlowGraph("#g3");
+xflowGraph3.setXFlow(xflow_3);
 
