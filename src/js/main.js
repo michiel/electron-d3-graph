@@ -144,7 +144,7 @@ class XFlowGraph {
 
     drag_handler(this.nodeG);
 
-    const tickActions = ()=> {
+    const pathCurveTickActions = ()=> {
       this.linkG.attr("d", function(d) {
         var dx = d.target.x - d.source.x,
           dy = d.target.y - d.source.y,
@@ -162,7 +162,38 @@ class XFlowGraph {
           return "translate(" + d.x + "," + d.y + ")"; });
     }
 
-    this.simulation.on("tick", tickActions );
+    const pathLineTickActions = ()=> {
+      this.linkG.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+          dy = d.target.y - d.source.y,
+          dr = 0;
+
+        return "M" +
+          d.source.x + "," +
+          d.source.y + "A" +
+          dr + "," + dr + " 0 0,1 " +
+          d.target.x + "," +
+          d.target.y;
+      });
+
+      this.nodeG
+        .attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")"; });
+    }
+
+    const lineTickActions = ()=> {
+      this.nodeG
+        .attr("cx", (d) => d.x)
+        .attr("cy", (d) => d.y);
+
+      this.linkG
+        .attr("x1", (d) => d.source.x)
+        .attr("y1", (d) => d.source.y)
+        .attr("x2", (d) => d.target.x)
+        .attr("y2", (d) => d.target.y);
+    }
+
+    this.simulation.on("tick", pathLineTickActions );
 
   }
 
