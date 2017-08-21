@@ -1,15 +1,98 @@
 
-class XFlowGraph {
-
+class GraphCanvas {
   constructor(svgSelector) {
     this.svg = d3.select(svgSelector);
+    this.width = +this.svg.attr("width");
+    this.height = +this.svg.attr("height");
     this.init();
   }
 
   init() {
-    this.width = +this.svg.attr("width");
-    this.height = +this.svg.attr("height");
-    this.g = this.svg.append("g").attr("class", "everything");
+    this.g = this.svg.append("g");
+    this.initZoom();
+  }
+
+  initZoom() {
+    const zoom_handler = d3.zoom()
+      .on("zoom", ()=> {
+        this.g.attr("transform", d3.event.transform)
+    });
+    zoom_handler(this.svg);
+
+  }
+}
+
+class GraphGrid {
+
+  constructor(canvas) {
+    this.canvas = canvas;
+
+    this.init();
+  }
+
+  init() {
+
+    this.g = this.canvas.g.append("g");
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+
+    var margin = {
+      top    : 5,
+      right  : 5,
+      bottom : 5,
+      left   : 5
+    };
+
+    var x = d3.scaleLinear().range([0, this.width]);
+    var y = d3.scaleLinear().range([this.height, 0]);
+
+    this.g
+      .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+    // gridlines in x axis function
+    function make_x_gridlines() {
+      return d3.axisBottom(x)
+        .ticks(5)
+    }
+
+    // gridlines in y axis function
+    function make_y_gridlines() {
+      return d3.axisLeft(y)
+        .ticks(5)
+    }
+
+    this.g.append("g")
+      .attr("class", "grid")
+      .attr("transform", "translate(0," + this.height + ")")
+      .call(make_x_gridlines()
+        .tickSize(-this.height)
+        .tickFormat("")
+      )
+
+    // add the Y gridlines
+    this.g.append("g")
+      .attr("class", "grid")
+      .call(make_y_gridlines()
+        .tickSize(-this.width)
+        .tickFormat("")
+      )
+  }
+
+}
+
+class XFlowGraph {
+
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.init();
+  }
+
+  init() {
+
+    this.g = this.canvas.g.append("g").attr("class", "everything");
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
 
     this.radius = 7;
     this.gravity = 65;
@@ -25,7 +108,7 @@ class XFlowGraph {
       }
     };
 
-    this.svg.append("svg:defs").selectAll("marker")
+    this.canvas.svg.append("svg:defs").selectAll("marker")
       .data(["end"])      // Different link/path types can be defined here
       .enter().append("svg:marker")    // This section adds in the arrows
       .attr("id", String)
@@ -39,7 +122,6 @@ class XFlowGraph {
       .append("svg:path")
       .attr("d", "M0,-5L10,0L0,5");
 
-    this.initZoom();
   }
 
   setXFlow(xflow) {
@@ -101,9 +183,11 @@ class XFlowGraph {
     this.nodeG.append("text")
       .attr("x", 12)
       .attr("dy", ".35em")
-      .text((d)=> { 
+      .text((d)=> {
         if (d.nodetype == "flox") {
-          return d.parameters.flox.expression;
+          return "$"  + d.parameters.flox.returns.name + " := \n" + "(" + d.parameters.flox.expression + ")";
+        } else if ((d.nodetype == "flow") && (d.action == "branch")) {
+          return "Test $" + d.parameters.flow.name;
         } else {
           return d.label;
         }
@@ -197,19 +281,13 @@ class XFlowGraph {
 
   }
 
-  initZoom() {
-    const zoom_handler = d3.zoom()
-      .on("zoom", ()=> {
-        this.g.attr("transform", d3.event.transform)
-    });
-    zoom_handler(this.svg);
-
-  }
 }
 
 const loadAndRender = (path, id, cb)=> {
+  const canvas = new GraphCanvas(id);
+  const grid = new GraphGrid(canvas);
   d3.json(path, (res) => {
-    const xflowGraph = new XFlowGraph(id);
+    const xflowGraph = new XFlowGraph(canvas);
     xflowGraph.setXFlow(res);
   });
 }
