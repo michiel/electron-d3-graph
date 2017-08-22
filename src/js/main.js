@@ -23,7 +23,6 @@ class GraphCanvas {
 }
 
 class GraphGrid {
-
   constructor(canvas) {
     this.canvas = canvas;
 
@@ -78,11 +77,9 @@ class GraphGrid {
         .tickFormat("")
       )
   }
-
 }
 
 class XFlowGraph {
-
   constructor(canvas) {
     this.canvas = canvas;
     this.init();
@@ -280,7 +277,6 @@ class XFlowGraph {
     this.simulation.on("tick", pathLineTickActions );
 
   }
-
 }
 
 const loadAndRender = (path, id, cb)=> {
@@ -292,7 +288,23 @@ const loadAndRender = (path, id, cb)=> {
   });
 }
 
-loadAndRender('data/xflow_10_steps.json', "#g1");
+const loadAndRenderPaths = (paths, id, cb)=> {
+  const canvas = new GraphCanvas(id);
+  const grid = new GraphGrid(canvas);
+
+  paths.forEach((path)=> {
+    d3.json(path, (res) => {
+      const xflowGraph = new XFlowGraph(canvas);
+      xflowGraph.setXFlow(res);
+    });
+  });
+}
+
+loadAndRenderPaths([
+	'data/xflow_10_steps.json',
+	'data/xflow_branch.json'
+	], "#g1");
+
 loadAndRender('data/xflow_loop.json', "#g2");
 loadAndRender('data/xflow_branch.json',"#g3");
 loadAndRender('data/xflow_add.json',"#g4");
